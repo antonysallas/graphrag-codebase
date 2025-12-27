@@ -18,7 +18,7 @@ We use `uv` for lightning-fast, reproducible dependency management.
 ```bash
 # Clone the repository
 git clone https://github.com/antonysallas/graphrag-codebase.git
-cd graphrag-pipeline
+cd graphrag-codebase
 
 # Sync all dependencies including dev tools
 uv sync --extra dev --extra docs
@@ -35,10 +35,13 @@ uv sync --extra dev --extra docs
 
 ### Neo4j Graph Database
 
-The pipeline requires **Neo4j 5.x**. We recommend using the provided Docker Compose setup:
+The pipeline requires **Neo4j 5.x**. You can run it via Docker:
 
 ```bash
-docker compose up -d neo4j
+docker run -d --name neo4j \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/password \
+  neo4j:5-community
 ```
 
 ### LLM Provider
@@ -47,7 +50,9 @@ For natural language querying (GraphRAG), you need an OpenAI-compatible API endp
 
 - **vLLM** (Recommended for local production)
 - **Ollama** (Recommended for local development)
-- **MaaS** (Model-as-a-Service providers like Groq, OpenAI, or Fireworks)
+- **MaaS** (Model-as-a-Service providers like OpenAI, Groq, Together, or Fireworks)
+
+See [Configuration](configuration.md#maas-provider-examples) for MaaS setup examples.
 
 ## Tree-sitter Grammars
 
@@ -65,5 +70,5 @@ This project uses **individual tree-sitter grammar packages** to handle differen
 ## See Also
 
 - [Quickstart Guide](quickstart.md)
-- [Docker Compose Guide](docker-compose.md)
+- [Configuration](configuration.md)
 - [User Guide: Building Graphs](../user-guide/building-graphs.md)
