@@ -1,0 +1,206 @@
+name: python
+description: Schema for Python codebases
+
+nodes:
+  File:
+    description: "Represents any file in the codebase"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+        description: "Relative path from codebase root"
+      - name: absolute_path
+        type: string
+        required: true
+        description: "Absolute file path"
+      - name: file_type
+        type: string
+        required: true
+        indexed: true
+        description: "Type of file (python, etc.)"
+      - name: content_hash
+        type: string
+        required: true
+        description: "SHA256 hash of file content"
+      - name: size
+        type: integer
+        required: true
+        description: "File size in bytes"
+      - name: last_modified
+        type: datetime
+        required: true
+        description: "Last modification timestamp"
+      - name: name
+        type: string
+        required: false
+        description: "File name"
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Module:
+    description: "Python module"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: path
+        type: string
+        required: true
+      - name: docstring
+        type: string
+        required: false
+      - name: is_package
+        type: boolean
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Class:
+    description: "Python class"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: bases
+        type: list
+        required: false
+      - name: decorators
+        type: list
+        required: false
+      - name: docstring
+        type: string
+        required: false
+      - name: is_abstract
+        type: boolean
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Function:
+    description: "Python function or method"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: params
+        type: list
+        required: false
+      - name: return_type
+        type: string
+        required: false
+      - name: decorators
+        type: list
+        required: false
+      - name: docstring
+        type: string
+        required: false
+      - name: is_async
+        type: boolean
+        required: false
+      - name: is_method
+        type: boolean
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Import:
+    description: "Import statement"
+    properties:
+      - name: module
+        type: string
+        required: true
+      - name: alias
+        type: string
+        required: false
+      - name: is_from_import
+        type: boolean
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Variable:
+    description: "Variable definition"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: type_hint
+        type: string
+        required: false
+      - name: scope
+        type: string
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+relationships:
+  IMPORTS:
+    from: Module
+    to: Module
+  FROM_IMPORTS:
+    from: Module
+    to: Module
+  DEFINES_CLASS:
+    from: Module
+    to: Class
+  DEFINES_FUNCTION:
+    from: Module
+    to: Function
+  HAS_METHOD:
+    from: Class
+    to: Function
+  INHERITS:
+    from: Class
+    to: Class
+  CALLS:
+    from: Function
+    to: Function
+  USES_VAR:
+    from: ["*"]
+    to: Variable
+  DEFINES_VAR:
+    from: ["*"]
+    to: Variable
+  IN_FILE:
+    from: ["*"]
+    to: File
+  DECORATED_BY:
+    from: ["*"]
+    to: Function
+
+indexes:
+  - node: File
+    property: path
+  - node: Module
+    property: name
+  - node: Class
+    property: name
+  - node: Function
+    property: name
+  - node: Variable
+    property: name
+  - node: File
+    properties: [repository, path]
+    type: composite
+
+constraints:
+  - node: File
+    properties: [repository, path]
+    type: unique

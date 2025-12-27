@@ -1,0 +1,100 @@
+site_name: GraphRAG Codebase
+site_description: AST-based knowledge graphs for universal codebase analysis
+site_url: https://github.com/antonysallas/graphrag-codebase
+repo_url: https://github.com/antonysallas/graphrag-codebase
+repo_name: antonysallas/graphrag-codebase
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/quickstart.md
+    - getting-started/installation.md
+    - getting-started/configuration.md
+  - User Guide:
+    - user-guide/building-graphs.md
+    - user-guide/querying-graphs.md
+    - user-guide/web-ui.md
+    - user-guide/mcp-tools.md
+    - user-guide/troubleshooting.md
+  - Architecture:
+    - architecture/overview.md
+    - architecture/extractors.md
+    - architecture/5-layer-design.md
+    - architecture/graph-schema.md
+    - architecture/extension-points.md
+  - API Reference:
+    - api/agents.md
+    - api/extractors.md
+    - api/mcp-tools.md
+  - Developer Guide:
+    - developer-guide/contributing.md
+    - developer-guide/adding-parsers.md
+    - developer-guide/adding-extractors.md
+    - developer-guide/adding-mcp-tools.md
+    - developer-guide/testing.md
+  - Reference:
+    - reference/schemas.md
+    - reference/cli-reference.md
+    - reference/mcp-tools-reference.md
+    - reference/environment-variables.md
+    - reference/schema-reference.md
+    - reference/changelog.md
+    - reference/glossary.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  - tags
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/antonysallas/graphrag-codebase

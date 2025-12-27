@@ -1,0 +1,379 @@
+# GraphRAG Schema Definition for Ansible Codebase
+# This defines all node types and relationship types in the Neo4j graph
+
+nodes:
+  File:
+    description: "Represents any file in the codebase"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+        description: "Relative path from codebase root"
+      - name: absolute_path
+        type: string
+        required: true
+        description: "Absolute file path"
+      - name: file_type
+        type: string
+        required: true
+        indexed: true
+        description: "Type of file (yaml, python, jinja2, ruby, etc.)"
+      - name: content_hash
+        type: string
+        required: true
+        description: "SHA256 hash of file content"
+      - name: size
+        type: integer
+        required: true
+        description: "File size in bytes"
+      - name: last_modified
+        type: datetime
+        required: true
+        description: "Last modification timestamp"
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+        description: "Repository identifier for multi-repo support"
+
+  Playbook:
+    description: "Ansible playbook file"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: path
+        type: string
+        required: true
+        indexed: true
+      - name: description
+        type: string
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Play:
+    description: "Individual play within a playbook"
+    properties:
+      - name: name
+        type: string
+        required: true
+      - name: hosts
+        type: string
+        required: true
+        indexed: true
+      - name: become
+        type: boolean
+        required: false
+      - name: gather_facts
+        type: boolean
+        required: false
+      - name: serial
+        type: string
+        required: false
+      - name: order
+        type: integer
+        required: true
+        description: "Order of play in playbook"
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Task:
+    description: "Ansible task"
+    properties:
+      - name: name
+        type: string
+        required: true
+      - name: module
+        type: string
+        required: true
+        indexed: true
+      - name: args
+        type: json
+        required: false
+        description: "Task arguments as JSON"
+      - name: when
+        type: string
+        required: false
+        description: "Conditional expression"
+      - name: loop
+        type: string
+        required: false
+      - name: register
+        type: string
+        required: false
+        indexed: true
+      - name: become
+        type: boolean
+        required: false
+      - name: order
+        type: integer
+        required: true
+      - name: line_number
+        type: integer
+        required: true
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Handler:
+    description: "Ansible handler"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: module
+        type: string
+        required: true
+      - name: args
+        type: json
+        required: false
+      - name: line_number
+        type: integer
+        required: true
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Role:
+    description: "Ansible role"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: source
+        type: string
+        required: false
+        description: "Galaxy role source or local path"
+      - name: version
+        type: string
+        required: false
+      - name: namespace
+        type: string
+        required: false
+        indexed: true
+      # No repository property for Role (global scope)
+
+  Variable:
+    description: "Variable definition or reference"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: value
+        type: json
+        required: false
+        description: "Variable value (if static)"
+      - name: scope
+        type: string
+        required: true
+        indexed: true
+        description: "Variable scope (playbook, play, task, role, etc.)"
+      - name: line_number
+        type: integer
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Template:
+    description: "Jinja2 template file"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+      - name: variables_used
+        type: list
+        required: false
+        description: "List of variable names used in template"
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Inventory:
+    description: "Inventory file or dynamic inventory script"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+      - name: type
+        type: string
+        required: true
+        description: "static or dynamic"
+      - name: hosts
+        type: list
+        required: false
+      - name: groups
+        type: list
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  VarsFile:
+    description: "Variables file (vars.yml, defaults, etc.)"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+      - name: scope
+        type: string
+        required: true
+        description: "defaults, vars, group_vars, host_vars, etc."
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+relationships:
+  INCLUDES:
+    description: "File includes another file via include/include_tasks"
+    from: File
+    to: File
+    properties:
+      - name: include_type
+        type: string
+        description: "include, include_tasks, include_vars, etc."
+      - name: line_number
+        type: integer
+
+  IMPORTS:
+    description: "File imports another file via import_playbook/import_tasks"
+    from: File
+    to: File
+    properties:
+      - name: import_type
+        type: string
+        description: "import_playbook, import_tasks, import_role"
+      - name: line_number
+        type: integer
+
+  HAS_PLAY:
+    description: "Playbook contains play"
+    from: Playbook
+    to: Play
+    properties:
+      - name: play_index
+        type: integer
+
+  HAS_TASK:
+    description: "Play or Role contains task"
+    from: [Play, Role]
+    to: Task
+    properties:
+      - name: task_index
+        type: integer
+
+  HAS_HANDLER:
+    description: "Playbook or Role has handler"
+    from: [Playbook, Role]
+    to: Handler
+
+  USES_TEMPLATE:
+    description: "Task uses a template file"
+    from: Task
+    to: Template
+    properties:
+      - name: parameter_name
+        type: string
+        description: "src, template, etc."
+
+  DEFINES_VAR:
+    description: "Entity defines a variable"
+    from: [Task, VarsFile, Play, Playbook, Role]
+    to: Variable
+    properties:
+      - name: line_number
+        type: integer
+
+  USES_VAR:
+    description: "Entity uses a variable"
+    from: [Task, Template, Play]
+    to: Variable
+    properties:
+      - name: context
+        type: string
+        description: "How the variable is used"
+
+  USES_ROLE:
+    description: "Playbook or Play uses a role"
+    from: [Playbook, Play]
+    to: Role
+    properties:
+      - name: role_params
+        type: json
+        description: "Parameters passed to role"
+
+  DEPENDS_ON:
+    description: "Role depends on another role"
+    from: Role
+    to: Role
+    properties:
+      - name: dependency_type
+        type: string
+        description: "meta/main.yml dependency or Galaxy dependency"
+
+  NOTIFIES:
+    description: "Task notifies a handler"
+    from: Task
+    to: Handler
+    properties:
+      - name: notification_name
+        type: string
+
+  LOADS_VARS:
+    description: "Playbook/Play loads variables from file"
+    from: [Playbook, Play, Task]
+    to: VarsFile
+    properties:
+      - name: line_number
+        type: integer
+
+  IN_FILE:
+    description: "Entity is defined in a file"
+    from: [Playbook, Play, Task, Handler, Role, Variable, Template, Inventory, VarsFile]
+    to: File
+
+# Indexes for performance
+# Note: Properties with constraints (File.path, Role.name) don't need separate indexes
+# as constraints automatically create indexes
+indexes:
+  - node: File
+    property: file_type
+  - node: Playbook
+    property: name
+  - node: Task
+    property: module
+  - node: Variable
+    property: name
+  - node: Handler
+    property: name
+  - node: File
+    properties: [repository, path]
+    type: composite
+
+# Constraints for data integrity
+constraints:
+  - node: File
+    properties: [repository, path]
+    type: unique
+  - node: Role
+    property: name
+    type: unique

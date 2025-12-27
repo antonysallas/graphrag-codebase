@@ -1,0 +1,106 @@
+name: generic
+description: Minimal schema for any codebase
+
+nodes:
+  File:
+    description: "Represents any file in the codebase"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+        description: "Relative path from codebase root"
+      - name: absolute_path
+        type: string
+        required: true
+        description: "Absolute file path"
+      - name: file_type
+        type: string
+        required: true
+        indexed: true
+        description: "Type of file"
+      - name: content_hash
+        type: string
+        required: true
+        description: "SHA256 hash of file content"
+      - name: size
+        type: integer
+        required: true
+        description: "File size in bytes"
+      - name: last_modified
+        type: datetime
+        required: true
+        description: "Last modification timestamp"
+      - name: name
+        type: string
+        required: false
+      - name: extension
+        type: string
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Directory:
+    description: "Directory in the codebase"
+    properties:
+      - name: path
+        type: string
+        required: true
+        indexed: true
+      - name: name
+        type: string
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+  Reference:
+    description: "Reference to a symbol or entity"
+    properties:
+      - name: name
+        type: string
+        required: true
+        indexed: true
+      - name: type
+        type: string
+        required: false
+      - name: line
+        type: integer
+        required: false
+      - name: repository
+        type: string
+        required: false
+        indexed: true
+
+relationships:
+  CONTAINS:
+    from: [Directory]
+    to: [File, Directory]
+  REFERENCES:
+    from: File
+    to: File
+  DEFINES:
+    from: File
+    to: Reference
+  USES:
+    from: File
+    to: Reference
+
+indexes:
+  - node: File
+    property: path
+  - node: Directory
+    property: path
+  - node: Reference
+    property: name
+  - node: File
+    properties: [repository, path]
+    type: composite
+
+constraints:
+  - node: File
+    properties: [repository, path]
+    type: unique
