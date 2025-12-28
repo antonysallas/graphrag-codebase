@@ -1,19 +1,21 @@
 """Tracing utilities using Langfuse."""
 
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar
 
-from langfuse import Langfuse
 from loguru import logger
 
 from src.config import get_config
 
+if TYPE_CHECKING:
+    from langfuse import Langfuse
+
 F = TypeVar("F", bound=Callable[..., Any])
 
-_langfuse_client: Optional[Langfuse] = None
+_langfuse_client: Optional["Langfuse"] = None
 
 
-def get_langfuse() -> Optional[Langfuse]:
+def get_langfuse() -> Optional["Langfuse"]:
     """Get or initialize Langfuse client if enabled."""
     global _langfuse_client
     config = get_config()
@@ -23,6 +25,9 @@ def get_langfuse() -> Optional[Langfuse]:
 
     if _langfuse_client is None:
         try:
+            # Lazy import to avoid compatibility issues
+            from langfuse import Langfuse
+
             _langfuse_client = Langfuse(
                 secret_key=config.langfuse.secret_key,
                 public_key=config.langfuse.public_key,
@@ -52,23 +57,48 @@ def trace_tool(tool_name: str) -> Callable[[F], F]:
             if langfuse is None:
                 return await func(*args, **kwargs)
 
-            trace = langfuse.trace(name=tool_name)
-            span = trace.span(name=tool_name, metadata={"tool": tool_name, "args": str(kwargs)})
+            # Langfuse v3 API: use start_span() for tracing
+            span = None
+            try:
+                span = langfuse.start_span(
+                    name=tool_name,
+                    input={"args": str(kwargs)},
+                    metadata={"tool": tool_name},
+                )
+            except Exception as e:
+                # If tracing fails, just run without it
+                logger.debug(f"Langfuse tracing unavailable: {e}")
+                return await func(*args, **kwargs)
+
             try:
                 result = await func(*args, **kwargs)
+
                 # Truncate output if too large
                 output_str = str(result)
                 if len(output_str) > 1000:
                     output_str = output_str[:1000] + "..."
-                span.update(output=output_str)
+
+                if span:
+                    # Langfuse v3: update() then end()
+                    span.update(output={"result": output_str})
+                    span.end()
+
                 return result
             except Exception as e:
-                span.update(level="ERROR", status_message=str(e))
+                if span:
+                    span.update(
+                        output={"error": str(e)},
+                        level="ERROR",
+                        status_message=str(e),
+                    )
+                    span.end()
                 logger.exception(f"Error in traced tool {tool_name}: {e}")
                 raise
             finally:
-                span.end()
-                langfuse.flush()
+                try:
+                    langfuse.flush()
+                except Exception:
+                    pass
 
         return wrapper  # type: ignore[return-value]
 

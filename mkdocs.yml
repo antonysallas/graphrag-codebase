@@ -1,8 +1,8 @@
-site_name: GraphRAG Codebase
+site_name: GraphRAG Pipeline
 site_description: AST-based knowledge graphs for universal codebase analysis
-site_url: https://github.com/antonysallas/graphrag-codebase
+site_url: https://asallas.github.io/graphrag-pipeline/
 repo_url: https://github.com/antonysallas/graphrag-codebase
-repo_name: antonysallas/graphrag-codebase
+repo_name: asallas/graphrag-pipeline
 
 theme:
   name: material
@@ -33,39 +33,47 @@ theme:
 nav:
   - Home: index.md
   - Getting Started:
-    - getting-started/quickstart.md
-    - getting-started/installation.md
-    - getting-started/configuration.md
+      - getting-started/quickstart.md
+      - getting-started/installation.md
+      - getting-started/configuration.md
+      - getting-started/docker-compose.md
   - User Guide:
-    - user-guide/building-graphs.md
-    - user-guide/querying-graphs.md
-    - user-guide/web-ui.md
-    - user-guide/mcp-tools.md
-    - user-guide/troubleshooting.md
+      - user-guide/building-graphs.md
+      - user-guide/querying-graphs.md
+      - user-guide/web-ui.md
+      - user-guide/mcp-tools.md
+      - user-guide/troubleshooting.md
   - Architecture:
-    - architecture/overview.md
-    - architecture/extractors.md
-    - architecture/5-layer-design.md
-    - architecture/graph-schema.md
-    - architecture/extension-points.md
+      - architecture/overview.md
+      - architecture/extractors.md
+      - architecture/5-layer-design.md
+      - architecture/graph-schema.md
+      - architecture/extension-points.md
   - API Reference:
-    - api/agents.md
-    - api/extractors.md
-    - api/mcp-tools.md
+      - api/agents.md
+      - api/extractors.md
+      - api/mcp-tools.md
   - Developer Guide:
-    - developer-guide/contributing.md
-    - developer-guide/adding-parsers.md
-    - developer-guide/adding-extractors.md
-    - developer-guide/adding-mcp-tools.md
-    - developer-guide/testing.md
+      - developer-guide/contributing.md
+      - developer-guide/adding-parsers.md
+      - developer-guide/adding-extractors.md
+      - developer-guide/adding-mcp-tools.md
+      - developer-guide/testing.md
+  - Deployment:
+      - deployment/docker.md
+      - deployment/kubernetes.md
+      - deployment/production-checklist.md
   - Reference:
-    - reference/schemas.md
-    - reference/cli-reference.md
-    - reference/mcp-tools-reference.md
-    - reference/environment-variables.md
-    - reference/schema-reference.md
-    - reference/changelog.md
-    - reference/glossary.md
+      - reference/schemas.md
+      - reference/cli-reference.md
+      - reference/mcp-tools-reference.md
+      - reference/environment-variables.md
+      - reference/schema-reference.md
+      - reference/changelog.md
+      - reference/glossary.md
+  - Blog:
+      - blog/medium-graphrag-article.md
+      - blog/linkedin-post.md
 
 markdown_extensions:
   - admonition

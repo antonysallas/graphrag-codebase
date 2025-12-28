@@ -33,39 +33,9 @@ These settings are used by the GraphRAG query layer to translate natural languag
 |----------|---------|-------------|
 | `LLM_PROVIDER` | `vllm` | AI provider (`vllm`, `openai`, `ollama`). |
 | `API_BASE` | `http://localhost:11434/v1` | Endpoint for the LLM API. |
-| `LLM_API_KEY` | `fake` | API key for authentication (required for MaaS). |
 | `MODEL_NAME` | `Qwen/Qwen2.5-Coder-7B-Instruct` | The specific model ID to use. |
 | `TEMPERATURE` | `0.0` | Controls randomness (0.0 is deterministic). |
 | `LLM_PROMPT_TEMPLATE` | `default` | Selection of prompt engineering template. |
-
-### MaaS Provider Examples
-
-**OpenAI:**
-
-```bash
-LLM_PROVIDER=openai
-API_BASE=https://api.openai.com/v1
-LLM_API_KEY=sk-...
-MODEL_NAME=gpt-4o-mini
-```
-
-**Groq:**
-
-```bash
-LLM_PROVIDER=openai
-API_BASE=https://api.groq.com/openai/v1
-LLM_API_KEY=gsk_...
-MODEL_NAME=llama-3.3-70b-versatile
-```
-
-**Together AI:**
-
-```bash
-LLM_PROVIDER=openai
-API_BASE=https://api.together.xyz/v1
-LLM_API_KEY=...
-MODEL_NAME=meta-llama/Llama-3.3-70B-Instruct-Turbo
-```
 
 ## Observability (Langfuse)
 
@@ -93,3 +63,4 @@ Configuration for the Model Context Protocol server.
 ## See Also
 
 - [Environment Variables Reference](../reference/environment-variables.md)
+- [Production Checklist](../deployment/production-checklist.md)

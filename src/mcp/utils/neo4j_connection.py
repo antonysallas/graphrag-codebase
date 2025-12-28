@@ -94,15 +94,18 @@ class Neo4jConnectionManager:
             timeout = self.default_timeout
 
         langfuse = get_langfuse()
-        trace = None
         span = None
         if langfuse:
-            trace = langfuse.trace(name="neo4j_query")
-            span = trace.span(
-                name="neo4j_query",
-                input={"query": query, "params": params},
-                metadata={"timeout": timeout},
-            )
+            try:
+                # Langfuse v3 API: use start_span() directly
+                span = langfuse.start_span(
+                    name="neo4j_query",
+                    input={"query": query, "params": params},
+                    metadata={"timeout": timeout},
+                )
+            except Exception as e:
+                logger.debug(f"Langfuse tracing unavailable: {e}")
+                span = None
 
         try:
             async with asyncio.timeout(timeout):

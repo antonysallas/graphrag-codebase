@@ -35,12 +35,29 @@ def detect_repo_type(path: Path) -> DetectionResult:
         path / "inventory",
         path / "group_vars",
         path / "host_vars",
+        path / ".ansible",  # Ansible config directory
     ]
     ansible_matches = [str(p) for p in ansible_indicators if p.exists()]
 
+    # Also check for playbook files (YAML with hosts/tasks patterns)
+    playbook_files = list(path.rglob("**/playbook*.yml")) + list(path.rglob("**/playbook*.yaml"))
+    playbook_files += list(path.rglob("**/site.yml")) + list(path.rglob("**/main.yml"))
+
+    # Check for tasks directories (strong Ansible indicator)
+    tasks_dirs = list(path.rglob("**/tasks"))
+    handlers_dirs = list(path.rglob("**/handlers"))
+
+    if playbook_files:
+        ansible_matches.append(f"playbook files ({len(playbook_files)} found)")
+    if tasks_dirs:
+        ansible_matches.append(f"tasks directories ({len(tasks_dirs)} found)")
+    if handlers_dirs:
+        ansible_matches.append(f"handlers directories ({len(handlers_dirs)} found)")
+
     if ansible_matches:
+        # More matches = higher confidence
         confidence = min(1.0, len(ansible_matches) / 3)
-        logger.info(f"Detected Ansible repo (confidence: {confidence:.2f})")
+        logger.info(f"Detected Ansible repo (confidence: {confidence:.2f}): {ansible_matches}")
         return DetectionResult("ansible", confidence, ansible_matches)
 
     # Python detection

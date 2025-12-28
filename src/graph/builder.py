@@ -62,21 +62,66 @@ class GraphBuilder:
         logger.info("Initializing database schema...")
 
         with self.driver.session(database=self.config.neo4j.database) as session:
-            # Create indexes
+            # Get existing indexes and constraints
+            existing_indexes = set()
+            existing_constraints = set()
+
+            try:
+                # Get existing indexes
+                result = session.run("SHOW INDEXES")
+                for record in result:
+                    # Index name format varies; we track by labelsOrTypes + properties
+                    labels = record.get("labelsOrTypes", [])
+                    props = record.get("properties", [])
+                    if labels and props:
+                        existing_indexes.add((tuple(labels), tuple(props)))
+
+                # Get existing constraints
+                result = session.run("SHOW CONSTRAINTS")
+                for record in result:
+                    labels = record.get("labelsOrTypes", [])
+                    props = record.get("properties", [])
+                    if labels and props:
+                        existing_constraints.add((tuple(labels), tuple(props)))
+            except Exception as e:
+                logger.debug(f"Could not query existing schema: {e}")
+
+            # Create indexes (skip if constraint exists on same properties)
             for query in self.schema.get_create_index_queries():
                 try:
                     session.run(query)
                     logger.debug(f"Created index: {query}")
                 except Exception as e:
-                    logger.warning(f"Failed to create index: {e}")
+                    if "already exists" in str(e).lower():
+                        logger.debug(f"Index already exists: {query}")
+                    else:
+                        logger.warning(f"Failed to create index: {e}")
 
-            # Create constraints
+            # Create constraints (drop conflicting indexes first)
             for query in self.schema.get_create_constraint_queries():
                 try:
                     session.run(query)
                     logger.debug(f"Created constraint: {query}")
                 except Exception as e:
-                    logger.warning(f"Failed to create constraint: {e}")
+                    error_msg = str(e).lower()
+                    if "already exists" in error_msg:
+                        logger.debug(f"Constraint already exists: {query}")
+                    elif "index" in error_msg and "drop" in error_msg:
+                        # Try to drop conflicting index and retry
+                        logger.debug(f"Dropping conflicting index for: {query}")
+                        try:
+                            # Extract index name from error or use pattern
+                            # Neo4j 5.x: DROP INDEX index_name IF EXISTS
+                            # For composite index on File(repository, path)
+                            session.run(
+                                "DROP INDEX file_repo_path_idx IF EXISTS"
+                            )
+                            session.run(query)
+                            logger.debug(f"Created constraint after dropping index: {query}")
+                        except Exception as retry_e:
+                            logger.warning(f"Failed to create constraint: {retry_e}")
+                    else:
+                        logger.warning(f"Failed to create constraint: {e}")
 
         logger.info("Schema initialization complete")
 
@@ -326,17 +371,25 @@ class GraphBuilder:
         stats = {}
 
         with self.driver.session(database=self.config.neo4j.database) as session:
-            # Count nodes by type
-            for node_type in NodeType:
-                result = session.run(f"MATCH (n:{node_type.value}) RETURN count(n) as count")
-                record = result.single()
-                stats[f"nodes_{node_type.value}"] = record["count"] if record else 0
+            # Get actual labels from database (avoids warnings for non-existent labels)
+            labels_result = session.run("CALL db.labels()")
+            actual_labels = {record["label"] for record in labels_result}
 
-            # Count relationships by type
-            for rel_type in RelationshipType:
-                result = session.run(f"MATCH ()-[r:{rel_type.value}]->() RETURN count(r) as count")
+            # Count nodes by type (only for labels that exist)
+            for label in actual_labels:
+                result = session.run(f"MATCH (n:`{label}`) RETURN count(n) as count")
                 record = result.single()
-                stats[f"rels_{rel_type.value}"] = record["count"] if record else 0
+                stats[f"nodes_{label}"] = record["count"] if record else 0
+
+            # Get actual relationship types from database
+            rels_result = session.run("CALL db.relationshipTypes()")
+            actual_rels = {record["relationshipType"] for record in rels_result}
+
+            # Count relationships by type (only for types that exist)
+            for rel_type in actual_rels:
+                result = session.run(f"MATCH ()-[r:`{rel_type}`]->() RETURN count(r) as count")
+                record = result.single()
+                stats[f"rels_{rel_type}"] = record["count"] if record else 0
 
             # Total counts
             result = session.run("MATCH (n) RETURN count(n) as count")

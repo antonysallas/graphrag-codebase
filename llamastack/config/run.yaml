@@ -1,0 +1,116 @@
+version: 2
+image_name: dadboard
+apis:
+  - inference
+  - agents
+  - tool_runtime
+  - safety
+  - vector_io
+  - files
+
+providers:
+  # LiteLLM MaaS Inference Provider (OpenAI-compatible API)
+  inference:
+    - provider_id: litellm-maas
+      provider_type: remote::vllm
+      config:
+        base_url: ${env.VLLM_URL}
+        api_token: ${env.VLLM_API_TOKEN}
+
+  # MCP Tool Runtime Provider
+  tool_runtime:
+    - provider_id: model-context-protocol
+      provider_type: remote::model-context-protocol
+      config: {}
+
+  # Vector I/O Provider (required by agents)
+  vector_io:
+    - provider_id: faiss
+      provider_type: inline::faiss
+      config:
+        persistence:
+          namespace: vector_io::faiss
+          backend: kv_default
+
+  # Files Provider (required by agents)
+  files:
+    - provider_id: localfs
+      provider_type: inline::localfs
+      config:
+        storage_dir: ./files
+        metadata_store:
+          backend: sql_default
+          table_name: files_metadata
+
+  # Safety Provider (required by agents)
+  safety:
+    - provider_id: llama-guard
+      provider_type: inline::llama-guard
+      config:
+        excluded_categories: []
+
+  # Agent Provider (for conversation management)
+  agents:
+    - provider_id: meta-reference
+      provider_type: inline::meta-reference
+      config:
+        persistence:
+          agent_state:
+            namespace: agents
+            backend: kv_default
+          responses:
+            table_name: responses
+            backend: sql_default
+            max_write_queue_size: 10000
+            num_writers: 4
+
+# Storage backends and stores (new v0.3.0 format)
+storage:
+  backends:
+    kv_default:
+      type: kv_sqlite
+      db_path: ./kvstore.db
+    sql_default:
+      type: sql_sqlite
+      db_path: ./sql_store.db
+  stores:
+    metadata:
+      namespace: registry
+      backend: kv_default
+    inference:
+      table_name: inference_store
+      backend: sql_default
+      max_write_queue_size: 10000
+      num_writers: 4
+    conversations:
+      table_name: openai_conversations
+      backend: sql_default
+
+# Registered resources (new v0.3.0 format)
+registered_resources:
+  models:
+    - model_id: ${env.VLLM_MODEL}
+      provider_id: litellm-maas
+      model_type: llm
+      metadata:
+        description: Model via LiteLLM MaaS OpenAI-compatible API
+  tool_groups:
+    - toolgroup_id: mcp::graphrag
+      provider_id: model-context-protocol
+      mcp_endpoint:
+        uri: http://localhost:5003/sse
+  shields: []
+  vector_dbs: []
+  datasets: []
+  scoring_fns: []
+  benchmarks: []
+
+# Agents are NOT defined in run.yaml - they must be created via API or UI
+
+# Server configuration
+server:
+  port: 8321
+
+# Telemetry (enabled for Jaeger)
+telemetry:
+  enabled: true

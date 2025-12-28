@@ -61,21 +61,19 @@ async def query_codebase(question: str, repository_id: Optional[str] = None) -> 
     repo = repository_id or get_repository()
 
     try:
-        if repo:
-            # Inject context into question for LLM if handled by client logic or prompt
-            # But GraphRAGClient.generate_cypher will handle it if we pass repo_id
-            # However, generate_cypher signature needs update in next phase.
-            # For now, let's pass it if client supports it or inject in question.
-            # Spec says "Update generate_cypher() to use multi-repo template".
-            # So we should pass repository_id to generate_cypher.
-            cypher = await client.generate_cypher(question, repository_id=repo)
-        else:
-            cypher = await client.generate_cypher(question)
+        # Load schema from Neo4j FIRST - used for both generation and validation
+        schema = await GraphSchema.from_neo4j(conn.driver)
+
+        # Pass schema to generate_cypher so LLM only sees actual relationships
+        cypher = await client.generate_cypher(
+            question,
+            repository_id=repo,
+            schema=schema,
+        )
 
         logger.info(f"Generated Cypher: {cypher}")
 
-        # Validate using schema from Neo4j database (includes all actual node types)
-        schema = await GraphSchema.from_neo4j(conn.driver)
+        # Validate using the SAME schema
         validator = CypherValidator(schema)
 
         validation = validator.validate(cypher)

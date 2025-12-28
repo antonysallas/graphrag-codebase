@@ -61,3 +61,55 @@ async def test_generate_cypher_template_selection(mock_config):
         args, _ = mock_llm.acomplete.call_args
         prompt = args[0]
         assert "<instructions>" in prompt
+
+
+@pytest.mark.asyncio
+async def test_generate_cypher_with_provided_schema(mock_config):
+    """Test that provided GraphSchema overrides config.schema."""
+    from src.mcp.utils.cypher_validator import GraphSchema
+
+    with patch("src.mcp.utils.graphrag_client.OpenAILike") as mock_llm_cls:
+        mock_llm = MagicMock()
+        mock_llm.acomplete = AsyncMock()
+        mock_llm.acomplete.return_value = MagicMock(text="MATCH (n) RETURN n")
+        mock_llm_cls.return_value = mock_llm
+
+        # Provide a schema with different labels than config.schema
+        provided_schema = GraphSchema(
+            node_labels={"CustomNode", "AnotherNode"},
+            relationship_types={"CUSTOM_REL", "ANOTHER_REL"},
+        )
+
+        client = GraphRAGClient()
+        await client.generate_cypher("test query", schema=provided_schema)
+
+        args, _ = mock_llm.acomplete.call_args
+        prompt = args[0]
+
+        # Verify provided schema is used, not config.schema
+        assert "CustomNode" in prompt
+        assert "AnotherNode" in prompt
+        assert "CUSTOM_REL" in prompt
+        # Should NOT contain config.schema labels
+        assert "TestNode" not in prompt
+
+
+@pytest.mark.asyncio
+async def test_generate_cypher_fallback_to_config_schema(mock_config):
+    """Test that config.schema is used when no schema is provided."""
+    with patch("src.mcp.utils.graphrag_client.OpenAILike") as mock_llm_cls:
+        mock_llm = MagicMock()
+        mock_llm.acomplete = AsyncMock()
+        mock_llm.acomplete.return_value = MagicMock(text="MATCH (n) RETURN n")
+        mock_llm_cls.return_value = mock_llm
+
+        client = GraphRAGClient()
+        # No schema parameter - should use config.schema
+        await client.generate_cypher("test query")
+
+        args, _ = mock_llm.acomplete.call_args
+        prompt = args[0]
+
+        # Should contain config.schema labels
+        assert "TestNode" in prompt
+        assert "TEST_REL" in prompt

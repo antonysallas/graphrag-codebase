@@ -3,13 +3,13 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "graphrag-codebase"
+name = "graphrag-pipeline"
 version = "0.1.0"
-description = "AST-based knowledge graphs for codebase analysis using Neo4j"
+description = "GraphRAG pipeline for Ansible codebase analysis using AST parsing and Neo4j"
 readme = "README.md"
 requires-python = ">=3.13"
 authors = [
-    {name = "Antony Sallas", email = "graphrag.mvni8@simplelogin.com"}
+    {name = "GraphRAG Pipeline", email = "dev@example.com"}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -25,52 +25,43 @@ classifiers = [
 dependencies = [
     # Tree-sitter for AST parsing
     "tree-sitter>=0.21.0",
-
     # Individual tree-sitter language grammars (lighter than tree-sitter-languages)
     "tree-sitter-python==0.25.0",
     "tree-sitter-yaml==0.7.2",
     "tree-sitter-ruby==0.23.1",
     "tree-sitter-jinja==0.3.3",
-
     # Neo4j graph database
     "neo4j>=5.14.0",
-
     # Git operations
     "GitPython>=3.1.40",
-
     # YAML parsing
     "PyYAML>=6.0",
     "ruamel.yaml>=0.18.0",
-
     # Utilities
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
-    "rich>=13.0.0",  # Beautiful console output
-    "typer>=0.9.0",  # CLI framework
-
+    "rich>=13.0.0", # Beautiful console output
+    "typer>=0.9.0", # CLI framework
     # Logging
     "loguru>=0.7.0",
-
     # MCP Core
     "mcp>=0.9.0",
-
     # HTTP Server (for HTTP/SSE transport)
     "uvicorn>=0.27.0",
     "starlette>=0.36.0",
     "sse-starlette>=1.8.0",
-
     # LlamaIndex for GraphRAG
     "llama-index-core>=0.14.0",
     "llama-index-llms-openai-like>=0.5.0",
     "llama-index-graph-stores-neo4j>=0.5.0",
-
     # Telemetry (optional)
     "opentelemetry-api>=1.38.0",
     "opentelemetry-sdk>=1.38.0",
     "opentelemetry-exporter-jaeger>=1.21.0",
     "langfuse>=2.0.0",
     "gradio>=4.0.0",
+    "llama-stack-client>=0.3.5",
 ]
 
 [project.optional-dependencies]
@@ -121,3 +112,6 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 addopts = "-v --cov=src --cov-report=html --cov-report=term"
+
+[tool.uv.sources]
+llama-stack-client = { git = "https://github.com/meta-llama/llama-stack-client-python.git" }
