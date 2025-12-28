@@ -21,6 +21,41 @@ This pipeline follows a **5-layer architecture**:
 - **Efficient Parsing**: Parallel processing with configurable workers, ~10-20 files/second
 - **Batch Operations**: Optimized Neo4j operations with configurable batch sizes
 
+## Prerequisites
+
+Before running GraphRAG Pipeline, ensure you have:
+
+1. **Python 3.13+** with [uv](https://docs.astral.sh/uv/) package manager
+2. **Neo4j Database** - Graph database for storing the knowledge graph
+3. **vLLM or compatible LLM server** - For natural language to Cypher conversion
+4. **LlamaStack** (optional) - For the full agent UI experience
+
+### LlamaStack Setup
+
+LlamaStack provides the agent runtime and web UI for interactive queries.
+
+```bash
+# Clone LlamaStack
+git clone https://github.com/meta-llama/llama-stack.git
+cd llama-stack
+
+# Create virtual environment and install
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Note the path for LLAMA_STACK_DIR in your .env
+```
+
+Configure in `.env`:
+
+```bash
+LLAMA_STACK_DIR=/path/to/llama-stack
+VLLM_URL=http://localhost:11434/v1
+VLLM_API_TOKEN=your-token
+VLLM_MODEL=Qwen/Qwen2.5-Coder-7B-Instruct
+```
+
 ## Installation
 
 ```bash
@@ -211,15 +246,31 @@ MCP_RATE_LIMIT_PER_MINUTE=100
 MCP_RATE_LIMIT_BURST=10
 ```
 
-## Web UI
+## Web UI (LlamaStack)
 
-A Gradio-based web interface for interactive graph queries.
+LlamaStack provides a web interface for interactive graph queries with agent capabilities.
 
-### Running the UI
+### Running with LlamaStack
 
 ```bash
-# Start the web UI
-uv run python llamastack/graphrag_ui.py
+# Start all services (Neo4j, MCP server, LlamaStack)
+make run
+```
+
+This starts:
+
+- Neo4j database (port 7687)
+- MCP HTTP server (port 5003)
+- LlamaStack with UI (port 8321)
+
+Access the LlamaStack UI at: **<http://localhost:8321>**
+
+### Alternative: Standalone Gradio UI
+
+For a simpler UI without LlamaStack:
+
+```bash
+make ui
 ```
 
 Access at: **<http://localhost:11436>**
@@ -303,7 +354,10 @@ uv sync
 
 # 2. Configure environment
 cp .env.example .env
-# Edit .env with your Neo4j credentials and LLM settings
+# Edit .env with:
+#   - Neo4j credentials
+#   - LLM/vLLM settings
+#   - LLAMA_STACK_DIR (path to llama-stack clone)
 
 # 3. Start Neo4j
 make neo4j
@@ -311,7 +365,11 @@ make neo4j
 # 4. Build graph from your codebase
 make graph CODEBASE_PATH=/path/to/your/codebase
 
-# 5. Start the web UI
+# 5. Start with LlamaStack UI (recommended)
+make run
+# Open http://localhost:8321
+
+# Or standalone Gradio UI
 make ui
 # Open http://localhost:11436
 
@@ -323,10 +381,14 @@ make mcp
 
 | Target | Description |
 | ------ | ----------- |
-| `make ui` | Start Gradio web UI (port 11436) |
+| `make run` | Start all services + LlamaStack UI (port 8321) |
+| `make services` | Start Neo4j + Langfuse (background) |
+| `make stop` | Stop all services |
+| `make ui` | Start standalone Gradio UI (port 11436) |
 | `make mcp` | Start MCP server (STDIO mode) |
 | `make mcp-http` | Start MCP server (HTTP/SSE mode, port 5003) |
 | `make neo4j` | Start Neo4j database |
+| `make langfuse` | Start Langfuse observability (port 11437) |
 | `make graph CODEBASE_PATH=...` | Build graph from codebase |
 | `make test` | Run tests |
 | `make lint` | Run linter |
