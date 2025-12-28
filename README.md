@@ -17,8 +17,7 @@ This pipeline follows a **5-layer architecture**:
 - **Multi-language Support**: Tree-sitter parsing for YAML (playbooks), Python (inventory scripts), Jinja2 (templates), Ruby (Vagrantfiles)
 - **Comprehensive Relationships**: Tracks file dependencies, role relationships, task hierarchies, and variable flow
 - **Git-based Ingestion**: Clone any Ansible repository at runtime for graph building
-- **Containerized**: Production-ready Docker image with OpenShift compatibility
-- **Helm Chart**: Deploy to OpenShift/Kubernetes with a single command
+- **Containerized**: Production-ready Docker image
 - **Efficient Parsing**: Parallel processing with configurable workers, ~10-20 files/second
 - **Batch Operations**: Optimized Neo4j operations with configurable batch sizes
 
@@ -93,37 +92,6 @@ uv run python scripts/clone_and_build.py \
   --git-url https://github.com/your-org/ansible-repo.git \
   --git-branch main
 ```
-
-### OpenShift/Kubernetes Deployment
-
-Deploy to OpenShift with Helm:
-
-```bash
-# Create project
-oc new-project graphrag-builder
-
-# Create Git secret (for private repos)
-oc create secret generic git-token --from-literal=token=$GIT_TOKEN
-
-# Install Helm chart
-helm install graphrag-builder ./helm \
-  --set graphBuilder.git.repoUrl=https://github.com/your-org/ansible-repo.git \
-  --set graphBuilder.git.tokenSecretName=git-token \
-  --set neo4j.auth.password=SecurePassword123 \
-  --set neo4j.route.enabled=true
-
-# Monitor job
-oc logs -f job/graphrag-builder-graph-builder
-
-# Access Neo4j Browser
-oc get route graphrag-builder-neo4j
-```
-
-**For detailed OpenShift deployment instructions, see:**
-
-- [OpenShift Quick Start](docs/openshift/QUICKSTART.md)
-- [Complete OpenShift Guide](docs/openshift/README.md)
-- [Helm Chart Documentation](helm/README.md)
 
 ## Graph Schema
 
